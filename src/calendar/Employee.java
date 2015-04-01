@@ -5,6 +5,7 @@ import java.sql.*;
 
 public class Employee {
 
+	private String testString;
 	private String username;
 	public Scanner scanner;
 	public ResultSet myRs;
