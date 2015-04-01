@@ -1,4 +1,4 @@
-package business-calendar;
+package calendar;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

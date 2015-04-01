@@ -1,4 +1,4 @@
-package business-calendar;
+package calendar;
 
 import java.util.Scanner;
 import java.sql.*;
