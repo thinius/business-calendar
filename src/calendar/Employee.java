@@ -236,7 +236,7 @@ public class Employee {
 				counter++;
 			}
 		}
-		if (counter==2){
+		if (counter==1){
 			String[] parts = tid.split(":");
 			String hr = parts[0];
 			String min = parts[1];
