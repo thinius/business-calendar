@@ -11,7 +11,7 @@ public class Employee {
 	public ResultSet myRs;
 	Connection myConn;
 	Statement myStmt;
-	int usernameID;
+	String usernameID;
 
 
 	public Employee(String username, Scanner scanner, ResultSet myRs, Connection myConn, Statement myStmt) {
@@ -21,6 +21,7 @@ public class Employee {
 		this.myConn = myConn;
 		this.myStmt = myStmt;
 		this.usernameID = getPnr();
+		System.out.println(usernameID);
 
 	}
 
@@ -45,7 +46,7 @@ public class Employee {
 		break;
 		case 3: 		getAllAppointments();
 		break;
-		case 4: 		addNewUser();
+		case 4: 		deleteAppointment();
 		break;
 		case 5: 		makeNewAppointment();
 		break;
@@ -76,7 +77,10 @@ public class Employee {
 		return;
 	}
 
-	public void addNewUser() {
+	public void deleteAppointment() {
+		
+		
+		
 		return;
 	}
 
@@ -167,6 +171,9 @@ public class Employee {
 	}
 
 	public void addUserToAppointment() {
+		System.out.println("Skriv inn avtaleID på avtalen: ");
+		int id = Integer.parseInt(scanner.next());
+		addUser(id);
 		return;
 	}
 
@@ -179,7 +186,7 @@ public class Employee {
 		System.out.println("1 - My next appointment");
 		System.out.println("2 - My appointments the next 7 days");
 		System.out.println("3 - List all my appointments");
-		System.out.println("4 - Add new user");
+		System.out.println("4 - Delete one of your appointments");
 		System.out.println("5 - Make new appointment");
 		System.out.println("6 - Delete user");
 		System.out.println("7 - Find participants in appointment");
@@ -286,14 +293,19 @@ public class Employee {
 		String t = d+" "+tid+":00";
 		return t;
 	}
-	int getPnr(){
-		ResultSet rs = getRs("select PERSONNUMMER from employees WHERE first_name='"+username+"'");
+	String getPnr(){
+		ResultSet rs = getRs("select * from BRUKER WHERE BRUKERNAVN='"+username+"'");
 		try {
-			int ut = rs.getInt("PERSONNUMMER");
-			return ut;
+			if (rs.next()){
+				String ut = rs.getString("PERSONNUMMER");
+				return ut;
+			}
+		} 
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+
 		}
-		catch (Exception e){
-			return (Integer) null;
-		}
+		return null;
 	}
 }
