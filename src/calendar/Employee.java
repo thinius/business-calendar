@@ -11,6 +11,7 @@ public class Employee {
 	public ResultSet myRs;
 	Connection myConn;
 	Statement myStmt;
+	int usernameID;
 
 
 	public Employee(String username, Scanner scanner, ResultSet myRs, Connection myConn, Statement myStmt) {
@@ -19,6 +20,8 @@ public class Employee {
 		this.myRs = myRs;
 		this.myConn = myConn;
 		this.myStmt = myStmt;
+		this.usernameID = getPnr();
+
 	}
 
 
@@ -78,7 +81,7 @@ public class Employee {
 	}
 
 	public void makeNewAppointment() {
-		
+
 		String avtaleStart = "";
 		String avtaleSlutt = "";
 		String avtaleDato = "";
@@ -93,7 +96,7 @@ public class Employee {
 				System.out.println("Ugyldig tid mfer");
 			}
 		}
-		
+
 		boolean sjekk2 = false;
 		while (!sjekk2){
 			System.out.println("Når slutter avtalen? (HH:MM)");
@@ -106,7 +109,7 @@ public class Employee {
 
 		boolean sjekk3 = false;
 		while (!sjekk3){
-			System.out.println("Hvilken dato er avtalen? (DD/MM/YY)");
+			System.out.println("Hvilken dato er avtalen? (DD/MM/YYYY)");
 			avtaleDato = scanner.next();
 			sjekk3 = datoSjekk(avtaleDato);
 			if (!sjekk3){
@@ -119,21 +122,21 @@ public class Employee {
 		int sisteId = 0;
 		try {
 			while (idSet.next()) {
-				if (sisteId<Integer.valueOf(idSet.toString())){
-					sisteId = Integer.valueOf(idSet.toString());
+				if (sisteId<Integer.valueOf(idSet.getInt("avtaleid"))){
+					sisteId = Integer.valueOf(idSet.getInt("avtaleid"));
 				}
 			}
+			sisteId++;
 		}
 		catch (Exception e){}
 
 
-		doStatement("INSERT INTO `db3`.`avtale` (`AVTALEID`, `AVTALEDATO`, `STARTTIDSPUNKT`, `SLUTTIDSPUNKT`, `BESKRIVELSE`, `AKTIV`, `ANTALL`, `ROMID1`, `OPPRETTERID`) VALUES ('"+sisteId+"', '2015-10-07', '2015-10-07 01:23:45', '2015-10-07 06:59:59', '123asdaf', '1', '2', '1', '1')");
-
+		doStatement("INSERT INTO `db3`.`avtale` (`AVTALEID`, `AVTALEDATO`, `STARTTIDSPUNKT`, `SLUTTIDSPUNKT`, `BESKRIVELSE`, `ROMID1`, `OPPRETTERID`) VALUES ('"+sisteId+"', '"+genDato(avtaleDato)+"', '"+genTime(avtaleStart, avtaleDato)+"', '"+genTime(avtaleSlutt, avtaleDato)+"', '"+beskrivelse+"', '1', '"+usernameID+"')");
+		doStatement("INSERT INTO `db3`.`deltaker` (`BRUKERNAVN`, `AVTALEID`) VALUES ('"+username+"', '"+sisteId+"');");
 		System.out.println("Vil du legge til andre brukere til avtalen? (Ja/Nei)");
 		String svar = scanner.next();
-		while (svar.equalsIgnoreCase("ja") || svar.equalsIgnoreCase("j")) {
-			System.out.println("Skriv inn brukernavn til brukeren du vil legge til:");
-			String addBruker = scanner.next();
+		if (svar.equalsIgnoreCase("ja") || svar.equalsIgnoreCase("j")) {
+			addUser(sisteId);
 		}
 
 		return;
@@ -146,9 +149,9 @@ public class Employee {
 			System.out.println( "===========" );
 			System.out.println( "Please enter the username of the user you want to delete: " );
 			String toBeDeleted = scanner.next();
-			String query = "DELETE FROM ansatt WHERE brukernavn = '" + toBeDeleted + "';";
-			ResultSet rs = myStmt.executeQuery(query);
-			System.out.println( "User " + rs.getString("brukernavn") +  " successfully deleted.");
+			String query = "DELETE FROM bruker WHERE brukernavn = '" + toBeDeleted + "';";
+			doStatement(query);
+			System.out.println( "User " + toBeDeleted +  " successfully deleted.");
 		}
 		catch (Exception e) {
 
@@ -186,16 +189,14 @@ public class Employee {
 		System.out.println("-1 - Exit CalendarProgram");
 	}
 
-	public String getUsername() {
-		return username;
-	}
 
 	private void doStatement(String input){
 		try{
-			myStmt.executeQuery(input);
+			myStmt.executeUpdate(input);
 		}
 		catch (Exception e){
-
+			System.out.println("Statement feilet");
+			e.printStackTrace();
 		}
 	}
 
@@ -221,14 +222,14 @@ public class Employee {
 			String dag = parts[0];
 			String mnd = parts[1];
 			String aar = parts[2];
-			if (Integer.valueOf(dag)<1 ||Integer.valueOf(dag)>31 || Integer.valueOf(mnd)<1 ||Integer.valueOf(mnd)>12 || Integer.valueOf(aar)<0 || Integer.valueOf(aar)>99){
+			if (Integer.valueOf(dag)<1 ||Integer.valueOf(dag)>31 || Integer.valueOf(mnd)<1 ||Integer.valueOf(mnd)>12 || Integer.valueOf(aar)<0 || Integer.valueOf(aar)>9999){
 				return false;
 			}
 			return true;
 		}
 		return false;
 	}
-	
+
 	boolean tidSjekk(String tid) {
 		int counter = 0;
 		for (int i = 0; i < tid.length(); i++) {
@@ -248,4 +249,51 @@ public class Employee {
 		return false;
 	}
 
+	void addUser(int avtaleId){
+		boolean kjor = true;
+		while (kjor){
+			System.out.println("Skriv inn brukernavnet til brukernavnet du vil legge til:");
+			String user = scanner.next();
+			ResultSet pnrSet = getRs("select BRUKERNAVN from bruker");
+
+			try {
+				while (pnrSet.next()) {
+					if (user.equalsIgnoreCase((pnrSet.getString("brukernavn")))){
+						doStatement("INSERT INTO `db3`.`deltaker` (`BRUKERNAVN`, `AVTALEID`) VALUES ('"+user+"', '"+avtaleId+"');");
+						System.out.println(user+" er lagt til avtalen.\n");
+					}
+				}
+			}
+			catch (Exception e){}
+			System.out.println("Vil du legge til en ny bruker?");
+			String svar = scanner.next();
+			if(!(svar.equalsIgnoreCase("ja") || svar.equalsIgnoreCase("j") || svar.equalsIgnoreCase("yes") || svar.equalsIgnoreCase("y"))){
+				kjor = false;
+			}
+		}
+	}
+
+	String genDato(String inn){
+		String[] parts = inn.split("/");
+		String dag = parts[0];
+		String mnd = parts[1];
+		String aar = parts[2];
+		String ut = aar+"-"+mnd+"-"+dag;
+		return ut;
+	}
+	String genTime(String tid, String dato){
+		String d = genDato(dato);
+		String t = d+" "+tid+":00";
+		return t;
+	}
+	int getPnr(){
+		ResultSet rs = getRs("select PERSONNUMMER from employees WHERE first_name='"+username+"'");
+		try {
+			int ut = rs.getInt("PERSONNUMMER");
+			return ut;
+		}
+		catch (Exception e){
+			return (Integer) null;
+		}
+	}
 }
