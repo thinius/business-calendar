@@ -1,4 +1,4 @@
-package calendar;
+package DB3;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
