@@ -21,7 +21,6 @@ public class Employee {
 		this.myConn = myConn;
 		this.myStmt = myStmt;
 		this.usernameID = getPnr();
-		System.out.println(usernameID);
 
 	}
 
@@ -42,9 +41,9 @@ public class Employee {
 		switch (taskNumber) {
 		case 1: 		getNextAppointment();
 		break;
-		case 2: 		getNextSevenAppointments();
+		case 2: 		getAllAppointments();
 		break;
-		case 3: 		getAllAppointments();
+		case 3: 		getAppointmentsOrdered();
 		break;
 		case 4: 		deleteAppointment();
 		break;
@@ -52,7 +51,7 @@ public class Employee {
 		break;
 		case 6: 		deleteUser();
 		break;
-		case 7: 		getAppointmentsWithAnotherUser();
+		case 7: 		updateAlarm();
 		break;
 		case 8: 		getCommonAppointmentsWithAnotherUser();
 		break;
@@ -60,28 +59,196 @@ public class Employee {
 		break;
 		case 10:		editAppointment(); 
 		break;
+		case 11:		getUsersAlphabetical(); 
+		break;
+		case 12:		updateAppointmentTime();
+		break;
 		default:	 	break;
 		}
 	}
 
 	public void getNextAppointment() {
-		return;
+
+		ResultSet rs = getRs("SELECT avtale.*, moeterom.* FROM avtale JOIN moeterom ON moeterom.ROMID = avtale.ROMID");
+		try{
+			while (rs.next()){
+				System.out.println(rs.getString("ANTALL") +" "+rs.getString("Beskrivelse"));
+			}
+		}
+		catch (Exception e){}
+
+
 	}
 
+	// returns all appointments sorted by start time
+	public void getAppointmentsOrdered() {
+		System.out.println( "===========" );
+		System.out.println( "Appointments sorted by start time" );
+		System.out.println( "===========" );
+		String query = " SELECT * FROM avtale GROUP BY STARTTIDSPUNKT ;";
+		ResultSet rs = getRs(query);
+		String ut = "";
+		try {
+			while (rs.next()){
+				ut += "Starttidspunkt: " + rs.getString("STARTTIDSPUNKT") + "\nBeskrivelse: " + rs.getString("BESKRIVELSE") + "\nRomID: " + rs.getString("ROMID") + "\n";
+			}
+		} 
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(ut);
+	}
 
-	public void getNextSevenAppointments() {
-		return;
+	// returns all users in alphabetical order
+	public void getUsersAlphabetical() {
+		System.out.println( "===========" );
+		System.out.println( "User in alphabetical order" );
+		System.out.println( "===========" );
+		String query = " SELECT brukernavn FROM bruker GROUP BY bruker ;";
+		ResultSet rs = getRs(query);
+		String ut = "";
+		try {
+			if (rs.next()){
+				ut += rs.getString("brukernavn");
+				ut += "\n";
+			}
+		}
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(ut);
+	}
+
+	public void updateAppointmentTime(){
+
+
+		String avtaleStart = "";
+		String avtaleSlutt = "";
+		String avtaleDato = "";
+
+		System.out.println("Skriv avtaleID til avtalen du vil endre");
+		String avtaleID = scanner.next();
+
+
+		boolean sjekk1 = false;
+		while (!sjekk1){
+			System.out.println("Når starter avtalen? (HH:MM)");
+			avtaleStart = scanner.next();
+			sjekk1 = tidSjekk(avtaleStart);
+			if (!sjekk1){
+				System.out.println("Ugyldig tid mfer");
+			}
+		}
+
+		boolean sjekk2 = false;
+		while (!sjekk2){
+			System.out.println("Når slutter avtalen? (HH:MM)");
+			avtaleSlutt = scanner.next();
+			sjekk2 = tidSjekk(avtaleSlutt);
+			if (!sjekk2){
+				System.out.println("Ugyldig tid mfer");
+			}
+		}
+
+		boolean sjekk3 = false;
+		while (!sjekk3){
+			System.out.println("Hvilken dato er avtalen? (DD/MM/YYYY)");
+			avtaleDato = scanner.next();
+			sjekk3 = datoSjekk(avtaleDato);
+			if (!sjekk3){
+				System.out.println("Ugyldig dato mfer");
+			}
+		}
+
+		doStatement("UPDATE `db3`.`avtale` SET `AVTALEDATO`='"+genDato(avtaleDato)+"';");
+		doStatement("UPDATE `db3`.`avtale` SET `STARTTIDSPUNKT`='"+genTime(avtaleStart,avtaleDato)+"';");
+
 	}
 
 	public void getAllAppointments() {
+		ResultSet rs = getRs("SELECT avtale.*, deltaker.*,bruker.* FROM avtale JOIN deltaker ON deltaker.AVTALEID = avtale.AVTALEID JOIN bruker ON bruker.BRUKERNAVN = deltaker.BRUKERNAVN");
+		try {
+			while (rs.next()){
+				if (Integer.valueOf(rs.getString("PERSONNUMMER")) == Integer.valueOf(usernameID)){
+					System.out.println(rs.getString("BESKRIVELSE")+" "+rs.getString("STARTTIDSPUNKT"));
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return;
 	}
 
+	// returns all appointments sorted by start time
+	public void getAppointmentsOrderedEndTime() {
+		System.out.println( "===========" );
+		System.out.println( "Appointments sorted by end time" );
+		System.out.println( "===========" );
+		String query = " SELECT * FROM avtale GROUP BY SLUTTIDSPUNKT ;";
+		ResultSet rs = getRs(query);
+		String ut = "";
+		try {
+			while (rs.next()){
+				ut += "Sluttidspunkt: " + rs.getString("SLUTTIDSPUNKT") + "\nBeskrivelse: " + rs.getString("BESKRIVELSE") + "\nRomID: " + rs.getString("ROMID") + "\n";
+			}
+		} 
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("ut");
+	}
+
+	// returns meeting rooms with capacity >9
+	public void getMeetingRoomsHighCapacity() {
+		System.out.println( "===========" );
+		System.out.println( "Meeting rooms with a capacity of 10 or more" );
+		System.out.println( "===========" );
+		String query = " SELECT antall, ROMID, MIN(antall) FROM moeterom HAVING MIN(antall) > 9 ;";
+		ResultSet rs = getRs(query);
+		String ut = "";
+		try {
+			if (rs.next()){
+				ut += rs.getString("ROMID") + "\n";
+			}
+		} 
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(ut);
+	}
+
+	public void getRoomCapacity() {
+		System.out.println( "===========" );
+		System.out.println( "Next appointment" );
+		System.out.println( "===========" );
+		String query =  "SELECT moeterom.antall FROM moeterom INNER JOIN (SELECT avtale.ROMID FROM deltaker WHERE brukernavn = '" + username + "' INNER JOIN avtale ON deltaker.avtaleID = avtale.avtaleID) deltakerAvtale ON moeterom.ROMID = deltakerAvtale.ROMID ;";
+		System.out.println("1");
+		ResultSet rs = getRs(query);
+		System.out.println("2");
+		String ut = "";
+		try {
+			while (rs.next()){
+				System.out.println("bob");
+				ut += rs.getString("ANTALL");
+				ut += "\n";
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println(ut);	
+	}
+
 	public void deleteAppointment() {
-		
-		
-		
-		return;
+		System.out.println("Hvilken avtale vil du slette? (avtaleID)");
+		String id = scanner.next();
+
+		doStatement("DELETE w FROM avtale w INNER JOIN deltaker e ON w.AVTALEID=e.AVTALEID Where w.AVTALEID ='"+id+"'"); 
 	}
 
 	public void makeNewAppointment() {
@@ -162,7 +329,10 @@ public class Employee {
 		}
 	}
 
-	public void getAppointmentsWithAnotherUser() {
+	public void updateAlarm() {
+
+		doStatement("update alarm u inner join avtale s on u.AVTALEID = s.AVTALEID set u.TID = s.STARTTIDSPUNKT");
+
 		return;
 	}
 
@@ -185,7 +355,7 @@ public class Employee {
 		System.out.println("\nHi " + username + "! Here is the menu:");
 		System.out.println("1 - My next appointment");
 		System.out.println("2 - My appointments the next 7 days");
-		System.out.println("3 - List all my appointments");
+		System.out.println("3 - getAppointmentsOrdered()");
 		System.out.println("4 - Delete one of your appointments");
 		System.out.println("5 - Make new appointment");
 		System.out.println("6 - Delete user");
@@ -214,6 +384,7 @@ public class Employee {
 			return output;
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}
